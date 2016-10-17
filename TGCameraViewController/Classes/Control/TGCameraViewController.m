@@ -30,6 +30,7 @@
 
 
 @interface TGCameraViewController () <UIImagePickerControllerDelegate, UINavigationControllerDelegate>
+@property (weak, nonatomic) IBOutlet UIView *coverView;
 
 @property (strong, nonatomic) IBOutlet UIView *captureView;
 @property (strong, nonatomic) IBOutlet UIImageView *topLeftView;
@@ -38,9 +39,10 @@
 @property (strong, nonatomic) IBOutlet UIImageView *bottomRightView;
 @property (strong, nonatomic) IBOutlet UIView *separatorView;
 @property (strong, nonatomic) IBOutlet UIView *actionsView;
-@property (strong, nonatomic) IBOutlet UIButton *gridButton;
-@property (strong, nonatomic) IBOutlet UIButton *toggleButton;
-@property (strong, nonatomic) IBOutlet UIButton *shotButton;
+@property (strong, nonatomic) IBOutlet TGTintedButton *closeButton;
+@property (strong, nonatomic) IBOutlet TGTintedButton *gridButton;
+@property (strong, nonatomic) IBOutlet TGTintedButton *toggleButton;
+@property (strong, nonatomic) IBOutlet TGTintedButton *shotButton;
 @property (strong, nonatomic) IBOutlet TGTintedButton *albumButton;
 @property (strong, nonatomic) IBOutlet UIButton *flashButton;
 @property (strong, nonatomic) IBOutlet TGCameraSlideView *slideUpView;
@@ -79,9 +81,20 @@
         _topViewHeight.constant = 0;
     }
     
-    if ([[TGCamera getOption:kTGCameraOptionHiddenToggleButton] boolValue] == YES) {
-        _toggleButton.hidden = YES;
-        _toggleButtonWidth.constant = 0;
+    NSArray *devices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
+    if (devices.count > 1) {
+        
+        if ([[TGCamera getOption:kTGCameraOptionHiddenToggleButton] boolValue] == YES) {
+            _toggleButton.hidden = YES;
+            _toggleButtonWidth.constant = 0;
+        }
+    }
+    else {
+        
+        if ([[TGCamera getOption:kTGCameraOptionHiddenToggleButton] boolValue] == YES) {
+            _toggleButton.hidden = YES;
+            _toggleButtonWidth.constant = 0;
+        }
     }
     
     if ([[TGCamera getOption:kTGCameraOptionHiddenAlbumButton] boolValue] == YES) {
@@ -91,7 +104,11 @@
     [_albumButton.layer setCornerRadius:10.f];
     [_albumButton.layer setMasksToBounds:YES];
     
-    
+    [_closeButton setImage:[UIImage imageNamed:@"CameraClose"] forState:UIControlStateNormal];
+    [_shotButton setImage:[UIImage imageNamed:@"CameraShot"] forState:UIControlStateNormal];
+    [_gridButton setImage:[UIImage imageNamed:@"CameraGrid"] forState:UIControlStateNormal];
+    [_toggleButton setImage:[UIImage imageNamed:@"CameraToggle"] forState:UIControlStateNormal];
+
     _camera = [TGCamera cameraWithFlashButton:_flashButton];
     
     _captureView.backgroundColor = [UIColor clearColor];
@@ -287,38 +304,15 @@
 - (void)deviceOrientationDidChangeNotification
 {
     UIDeviceOrientation orientation = [UIDevice.currentDevice orientation];
-    NSInteger degress;
     
-    switch (orientation) {
-        case UIDeviceOrientationFaceUp:
-        case UIDeviceOrientationPortrait:
-        case UIDeviceOrientationUnknown:
-            degress = 0;
-            break;
-            
-        case UIDeviceOrientationLandscapeLeft:
-            degress = 90;
-            break;
-            
-        case UIDeviceOrientationFaceDown:
-        case UIDeviceOrientationPortraitUpsideDown:
-            degress = 180;
-            break;
-            
-        case UIDeviceOrientationLandscapeRight:
-            degress = 270;
-            break;
+    if ( UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad ) {
+        //Make view blank and tell user to use portrait
+        if(UIDeviceOrientationIsLandscape(orientation)) {
+            self.coverView.hidden = NO;
+        } else {
+            self.coverView.hidden = YES;
+        }
     }
-    
-    CGFloat radians = degress * M_PI / 180;
-    CGAffineTransform transform = CGAffineTransformMakeRotation(radians);
-    
-    [UIView animateWithDuration:.5f animations:^{
-        _gridButton.transform =
-        _toggleButton.transform =
-        _albumButton.transform =
-        _flashButton.transform = transform;
-    }];
 }
 
 -(void)latestPhoto
